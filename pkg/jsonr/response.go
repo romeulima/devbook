@@ -1,4 +1,4 @@
-package pkg
+package jsonr
 
 import (
 	"encoding/json"

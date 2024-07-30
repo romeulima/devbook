@@ -8,7 +8,7 @@ import (
 	"github.com/romeulima/devbook/internal/database"
 	"github.com/romeulima/devbook/internal/models"
 	"github.com/romeulima/devbook/internal/repository"
-	"github.com/romeulima/devbook/pkg"
+	"github.com/romeulima/devbook/pkg/jsonr"
 )
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -17,14 +17,14 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := json.NewDecoder(r.Body).Decode(userRequest); err != nil {
-		pkg.WriteJSON(w, http.StatusBadRequest, models.Error{
+		jsonr.WriteJSON(w, http.StatusBadRequest, models.Error{
 			Message: "Invalid request Payload",
 		})
 		return
 	}
 
 	if err := userRequest.ValidadeFields(userRequest); err != nil {
-		pkg.WriteJSON(w, http.StatusBadRequest, models.Error{
+		jsonr.WriteJSON(w, http.StatusBadRequest, models.Error{
 			Message: err.Error(),
 		})
 		return
@@ -35,7 +35,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	dbpool, err := database.Connect()
 
 	if err != nil {
-		pkg.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
+		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
 		return
 	}
 
@@ -52,11 +52,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 			errorMessage = "Email or nick is already registered"
 		}
 
-		pkg.WriteJSON(w, status, models.Error{Message: errorMessage})
+		jsonr.WriteJSON(w, status, models.Error{Message: errorMessage})
 		return
 	}
 
-	pkg.WriteJSON(w, http.StatusCreated, userEntity)
+	jsonr.WriteJSON(w, http.StatusCreated, userEntity)
 
 }
 

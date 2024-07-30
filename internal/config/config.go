@@ -1,28 +1,29 @@
 package config
 
 import (
-	"log"
 	"os"
 	"strconv"
-
-	"github.com/joho/godotenv"
 )
 
 var (
-	connectionString = ""
-	port             = 0
+	DbHost     = ""
+	DbUser     = ""
+	DbPassword = ""
+	DbName     = ""
+	ApiPort    = 0
 )
 
-func LoadVariables() {
+func LoadEnvironments() {
 	var err error
-	if err = godotenv.Load(); err != nil {
-		log.Fatal(err)
-	}
 
-	port, err = strconv.Atoi(os.Getenv("API_PORT"))
+	DbHost = os.Getenv("DB_HOST")
+	DbUser = os.Getenv("DB_USER")
+	DbPassword = os.Getenv("DB_PASSWORD")
+	DbName = os.Getenv("DB_NAME")
+	ApiPort, err = strconv.Atoi(os.Getenv("API_PORT"))
 
 	if err != nil {
-		port = 9000
+		ApiPort = 9000
 	}
 
 }

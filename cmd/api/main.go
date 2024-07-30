@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -9,8 +10,10 @@ import (
 )
 
 func main() {
-	config.LoadVariables()
+	config.LoadEnvironments()
+
 	router := server.CreateRouter()
 
-	log.Fatal(http.ListenAndServe(":5000", router))
+	fmt.Printf("Server is running on port %v\n", config.ApiPort)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", config.ApiPort), router))
 }

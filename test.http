@@ -1,0 +1,10 @@
+### Insert user
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "name": "Romeu Lima",
+  "nick": "bores",
+  "email": "romeu.sousadp@gmail.com",
+  "password": "p"
+}

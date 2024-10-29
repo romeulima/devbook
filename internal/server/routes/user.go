@@ -17,14 +17,14 @@ var usersRoutes = []Route{
 	{
 		URI:      "/users",
 		Method:   http.MethodGet,
-		Function: controller.GetAllUsers,
+		Function: controller.GetUsers,
 		NeedAuth: false,
 	},
 	{
 		URI:      "/users/{id}",
 		Method:   http.MethodGet,
 		Function: controller.GetUserById,
-		NeedAuth: false,
+		NeedAuth: true,
 	},
 	{
 		URI:      "/users/{id}",

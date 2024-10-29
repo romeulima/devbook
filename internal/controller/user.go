@@ -3,8 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/romeulima/devbook/internal/database"
 	"github.com/romeulima/devbook/internal/models"
 	"github.com/romeulima/devbook/internal/repository"
@@ -23,7 +25,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := userRequest.ValidadeFields(userRequest); err != nil {
+	if err := userRequest.Prepare("cadastro", userRequest); err != nil {
 		jsonr.WriteJSON(w, http.StatusBadRequest, models.Error{
 			Message: err.Error(),
 		})
@@ -38,8 +40,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
 		return
 	}
-
-	defer dbpool.Close()
 
 	userRepository := repository.NewRepository(dbpool)
 
@@ -60,18 +60,139 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("message: Getting all users"))
+func GetUsers(w http.ResponseWriter, r *http.Request) {
+	userParam := strings.ToLower(r.URL.Query().Get("user"))
+
+	dbpool, err := database.Connect()
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
+		return
+	}
+
+	userRepository := repository.NewRepository(dbpool)
+
+	users, err := userRepository.GetUsers(r.Context(), userParam)
+
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
+		return
+	}
+
+	jsonr.WriteJSON(w, http.StatusOK, users)
 }
 
 func GetUserById(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("message: Getting user by id"))
+	params := mux.Vars(r)
+
+	userId, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusBadRequest, models.Error{Message: err.Error()})
+		return
+	}
+
+	dbpool, err := database.Connect()
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
+		return
+	}
+
+	userRepository := repository.NewRepository(dbpool)
+
+	user, err := userRepository.GetUserById(r.Context(), userId)
+
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusNotFound, models.Error{Message: "user not found"})
+		return
+	}
+
+	jsonr.WriteJSON(w, http.StatusOK, user)
+
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("message: Updating user informations"))
+	params := mux.Vars(r)
+
+	userId, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusBadRequest, models.Error{Message: err.Error()})
+		return
+	}
+
+	userRequest := new(models.UserRequest)
+
+	defer r.Body.Close()
+
+	if err = json.NewDecoder(r.Body).Decode(userRequest); err != nil {
+		jsonr.WriteJSON(w, http.StatusBadRequest, models.Error{
+			Message: "Invalid request Payload",
+		})
+		return
+	}
+
+	if err = userRequest.ValidadeFields("update", userRequest); err != nil {
+		jsonr.WriteJSON(w, http.StatusBadRequest, models.Error{
+			Message: err.Error(),
+		})
+		return
+	}
+
+	user := models.NewUser(userRequest)
+
+	dbpool, err := database.Connect()
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
+		return
+	}
+
+	userRepository := repository.NewRepository(dbpool)
+
+	_, err = userRepository.GetUserById(r.Context(), userId)
+
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusNotFound, models.Error{Message: "user not found"})
+		return
+	}
+
+	if err = userRepository.UpdateUser(r.Context(), userId, user); err != nil {
+		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
+		return
+	}
+
+	jsonr.WriteJSON(w, http.StatusNoContent, nil)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("message: Deleting user"))
+	params := mux.Vars(r)
+
+	userId, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusBadRequest, models.Error{Message: err.Error()})
+		return
+	}
+
+	dbpool, err := database.Connect()
+
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
+		return
+	}
+
+	userRepository := repository.NewRepository(dbpool)
+
+	_, err = userRepository.GetUserById(r.Context(), userId)
+
+	if err != nil {
+		jsonr.WriteJSON(w, http.StatusNotFound, models.Error{Message: "user not found"})
+		return
+	}
+
+	if err = userRepository.DeleteUser(r.Context(), userId); err != nil {
+		jsonr.WriteJSON(w, http.StatusInternalServerError, models.Error{Message: err.Error()})
+		return
+	}
+
+	jsonr.WriteJSON(w, http.StatusNoContent, nil)
 }

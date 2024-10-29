@@ -1,8 +1,8 @@
 package config
 
 import (
+	"crypto/ecdsa"
 	"os"
-	"strconv"
 )
 
 var (
@@ -10,20 +10,13 @@ var (
 	DbUser     = ""
 	DbPassword = ""
 	DbName     = ""
-	ApiPort    = 0
+	SigningKey []byte
+	SecretJwt  *ecdsa.PrivateKey
 )
 
 func LoadEnvironments() {
-	var err error
-
 	DbHost = os.Getenv("DB_HOST")
 	DbUser = os.Getenv("DB_USER")
 	DbPassword = os.Getenv("DB_PASSWORD")
 	DbName = os.Getenv("DB_NAME")
-	ApiPort, err = strconv.Atoi(os.Getenv("API_PORT"))
-
-	if err != nil {
-		ApiPort = 9000
-	}
-
 }

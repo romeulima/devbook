@@ -2,12 +2,29 @@ version: '3.9'
 
 services:
   postgres:
-    container_name: devbookdb
+    container_name: devbook_psql
     image: postgres
     ports:
-      - 5432:5432
+      - "5432:5432"
+    env_file:
+      - ./.env
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres_migrate:
+    image: migrate/migrate
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "echo Waiting for PostgreSQL to be ready...; sleep 10; migrate -path=/migrations -database postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable up"]
+    env_file:
+      - ./.env
